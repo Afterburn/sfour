@@ -1,7 +1,7 @@
 import feedparser
 
 
-def execute(url):
+def execute(plugins, url):
     p = feedparser.parse(url)
     print(p['feed']['title'])
 

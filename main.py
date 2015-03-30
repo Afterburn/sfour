@@ -61,7 +61,7 @@ class Core():
             if plugin_name != name:
                 continue
 
-            if extension == 'py' and self.validate_plugin(plugin_name) == True:
+            if extension == 'py':
                 plugin = imp.load_source(plugin_name, full_path)
                 logging.info('loaded plugin: %s' % (plugin_name))
 
@@ -82,6 +82,8 @@ class Core():
             copy_args = copy.copy(args) 
             del copy_args['interval']
 
+            copy_args['plugins'] = self.load_plugin
+
             # See if plugin is already loaded
             if plugin_name not in self.loaded_plugins:
                 self.load_plugin(plugin_name)
@@ -89,15 +91,6 @@ class Core():
             schedule.every(args['interval']).minutes.do(self.loaded_plugins[plugin_name].execute, **copy_args)
 
     
-    def validate_plugin(self, plugin_name):
-        for item in self.plugin_cfg:
-            if plugin_name in item:
-                logging.info('plugin found in config: %s' % plugin_name)
-                return True
-
-        logging.info('plugin not in config: %s' % plugin_name)
-        return False
-
 
     def plugin_basename(self, path):
         return os.path.basename(path).split('.py')[0].strip()
