@@ -1,0 +1,16 @@
+---
+# http://alerts.weather.gov/
+
+
+- test:
+    interval: 1
+    
+
+- rss:
+    interval: 1
+    url: http://feeds.reuters.com/reuters/topNews
+
+- rss:
+    interval: 1
+    url: http://feeds.reuters.com/Reuters/domesticNews
+

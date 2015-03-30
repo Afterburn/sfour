@@ -1,0 +1,7 @@
+---
+
+- settings:
+    log_path:   /home/stealth/programming/sfour/log
+    db_path:    /home/stealth/programming/sfour/items.db
+    plugin_dir: /home/stealth/programming/sfour/plugins
+    plugin_cfg: /home/stealth/programming/sfour/plugin.yml

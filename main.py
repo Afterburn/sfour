@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import imp
+import copy
 
 
 import yaml
@@ -10,37 +11,86 @@ import time
 
 #https://github.com/dbader/schedule/blob/master/FAQ.rst
 
-class PluginManager():
-    def __init__(self, config):
-        self.index = {}
-        self.config = config 
+class Helper:
+    @staticmethod
+    def get_item(config, name):
 
-    def load_plugins(self):
-        for file_ in os.listdir(self.config[0]['plugin_dir']):
-            full_path   = '%s/%s' % (self.config[0]['plugin_dir'], file_)
+        for i in range(len(config)):
+            args = {}
+            item_name = config[i].keys()[0]
+
+            if item_name != name:
+                continue
+
+            item_data = config[i][item_name]
+
+            for arg in item_data:
+                args[arg] = item_data[arg]
+
+            return item_data, args
+    
+    @staticmethod
+    def yield_items(config):
+        for i in range(len(config)):
+            args = {}
+            item_name = config[i].keys()[0]
+            item_data = config[i][item_name]
+
+            yield item_name, item_data
+
+
+class Core():
+    def __init__(self):
+
+        cfg_manager = ConfigManager()
+        self.global_cfg = cfg_manager.get_global_cfg()
+        self.plugin_cfg = cfg_manager.get_plugin_cfg()
+        self.settings   = cfg_manager.get_settings()
+   
+        self.loaded_plugins = {}
+              
+
+    def load_plugin(self, name):
+        plugin = False
+
+        for file_ in os.listdir(self.settings['plugin_dir']):
+            full_path   = '%s/%s' % (self.settings['plugin_dir'], file_)
             plugin_name = self.plugin_basename(full_path)
             extension   = file_.split('.')[-1]
+           
+            if plugin_name != name:
+                continue
 
             if extension == 'py' and self.validate_plugin(plugin_name) == True:
                 plugin = imp.load_source(plugin_name, full_path)
-                self.index[plugin_name] = {'full_path':full_path, 'plugin':plugin}
+                logging.info('loaded plugin: %s' % (plugin_name))
 
-                logging.info('loaded plugin: %s' % plugin_name)
+                # Save the plugin
+                self.loaded_plugins[plugin_name] = plugin
+                return plugin
 
-                interval = self.config[0][plugin_name]['interval']
-    
-                if interval <= 0:
-                    logging.info('interval is less than 0, cannot schedule')
-                    continue
+        return False 
 
-                schedule.every(interval).minutes.do(plugin.run)
+    def execute_config(self):
 
-                logging.info('scheduling plugin for execution every %s minutes' % (interval))
+        for plugin_name,args in Helper.yield_items(self.plugin_cfg):
+            if 'interval' not in args:
+                logging.critical('interval not set for: %s' % (plugin_name))
+                return False
 
+            # Remove interval 
+            copy_args = copy.copy(args) 
+            del copy_args['interval']
+
+            # See if plugin is already loaded
+            if plugin_name not in self.loaded_plugins:
+                self.load_plugin(plugin_name)
+
+            schedule.every(args['interval']).minutes.do(self.loaded_plugins[plugin_name].execute, **copy_args)
 
     
     def validate_plugin(self, plugin_name):
-        for item in self.config:
+        for item in self.plugin_cfg:
             if plugin_name in item:
                 logging.info('plugin found in config: %s' % plugin_name)
                 return True
@@ -58,41 +108,71 @@ class PluginManager():
 
 
 class ConfigManager():
-    def __init__(self):
-        self.base_dir    = os.getcwd()
-        self.config_path = '%s/config.yml' % (self.base_dir)
-        self.config = {}
-         
-        logging.basicConfig(filename='%s/log' % (self.base_dir), level=logging.DEBUG)
+    def __init__(self, g_cfg_path=None, p_cfg_path=None):
+        self.base_dir = os.getcwd()
 
-        if not os.path.exists(self.config_path):
-            logging.critical('Could not locate config: %s' % (self.config_path))
-            return 1
+        if not g_cfg_path:
+            self.g_cfg_path = '%s/global.yml'  % (self.base_dir)
+        
+        if not p_cfg_path:
+            self.p_cfg_path = '%s/plugins.yml' % (self.base_dir)
+
+        self.p_cfg      = {}
+        self.g_cfg      = {}
+        self.settings   = {}
+         
+        
+        if not os.path.exists(self.g_cfg_path):
+            logging.critical('Could not locate global config: %s' % (self.g_cfg_path))
+            return 
+
 
         # Docs for YAML: http://pyyaml.org/wiki/PyYAMLDocumentation
-        with open(self.config_path) as cfg:
-            self.config = yaml.load(cfg.read())
+        # load the global config
+        self.g_cfg = self.load_yaml(self.g_cfg_path)
+      
+        # Look for settings (item_data, args)
+        self.settings = Helper.get_item(self.g_cfg, 'settings')[0]
 
-        self.config[0]['db_path']    = '%s/items.db' % self.base_dir # Fix for MariaDB
-        self.config[0]['plugin_dir'] = '%s/plugins'  % self.base_dir
-        
-        sys.path.append(self.config[0]['plugin_dir'])
+        if not self.settings:
+            print('Could not load settings')
+            return 
 
-    def get_config(self):
-        return self.config
+        if 'log_path' not in self.settings:
+            self.settings['log_path'] = '%s/log' % (self.base_dir)
+            print('No log specified, using: %s' % (self.settings['log_path']))
+
+                
+        if 'db_path' not in self.settings:
+            print('No database specified, quitting')
+
+        logging.basicConfig(filename=self.settings['log_path'], level=logging.DEBUG)
+
+        sys.path.append(self.settings['plugin_dir'])
+
+        self.p_cfg = self.load_yaml(self.p_cfg_path)
+   
+
+    def load_yaml(self, path):
+        with open(path) as cfg:
+            return yaml.load(cfg.read())
+
+    def get_plugin_cfg(self):
+        return self.p_cfg
+
+    def get_global_cfg(self):
+        return self.g_cfg
+
+    def get_settings(self):
+        return self.settings
 
 if __name__ == '__main__':
-    cfg_mgr = ConfigManager()
-    plg_mgr = PluginManager(cfg_mgr.get_config())
-    plg_mgr.load_plugins()
+    core = Core()
+    core.execute_config()
 
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 
-
-
-# load plugins
-# run plugins by time
 
