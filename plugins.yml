@@ -5,12 +5,16 @@
 - test:
     interval: 1
     
-
 - rss:
-    interval: 1
+    interval: 30
     url: http://feeds.reuters.com/reuters/topNews
 
 - rss:
-    interval: 1
+    interval: 30
     url: http://feeds.reuters.com/Reuters/domesticNews
+    
+- rss:
+    interval: .50
+    url: http://alerts.weather.gov/cap/us.php?x=0    
+
 

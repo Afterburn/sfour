@@ -2,13 +2,13 @@ import random
 
 
 
-def execute(plugins):
-    return_value = {'test':random.randrange(0,1000)}
+def execute(plugins, db):
+    value = {'test':random.randrange(0,1000)}
 
     echo = plugins('echo')
 
     if echo:
-        echo.execute(plugins, return_value)
+        echo.execute(plugins, db, value)
 
     else:
-        print(dir(echo))
+        print('cant echo')

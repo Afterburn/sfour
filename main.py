@@ -9,7 +9,8 @@ import yaml
 import schedule
 import time
 
-#https://github.com/dbader/schedule/blob/master/FAQ.rst
+from sql.db_connect import Connect
+
 
 class Helper:
     @staticmethod
@@ -48,7 +49,16 @@ class Core():
         self.settings   = cfg_manager.get_settings()
    
         self.loaded_plugins = {}
-              
+        
+        self.db = Connect(self.settings['db_path'])
+    
+        if self.db:
+            logging.info('connected to database')
+
+        else:
+            logging.info('could not connect to database')
+            return 
+
 
     def load_plugin(self, name):
         plugin = False
@@ -83,11 +93,13 @@ class Core():
             del copy_args['interval']
 
             copy_args['plugins'] = self.load_plugin
+            copy_args['db']      = self.db
 
             # See if plugin is already loaded
             if plugin_name not in self.loaded_plugins:
                 self.load_plugin(plugin_name)
 
+            #https://github.com/dbader/schedule/blob/master/FAQ.rst
             schedule.every(args['interval']).minutes.do(self.loaded_plugins[plugin_name].execute, **copy_args)
 
     
@@ -141,10 +153,7 @@ class ConfigManager():
 
         logging.basicConfig(filename=self.settings['log_path'], level=logging.DEBUG)
 
-        sys.path.append(self.settings['plugin_dir'])
-
         self.p_cfg = self.load_yaml(self.p_cfg_path)
-   
 
     def load_yaml(self, path):
         with open(path) as cfg:
