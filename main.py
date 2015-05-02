@@ -88,7 +88,7 @@ class Core():
                 logging.critical('interval not set for: %s' % (plugin_name))
                 return False
 
-            # Remove interval 
+            # Modify the arguments so the execute function gets what it needs. 
             copy_args = copy.copy(args) 
             del copy_args['interval']
 

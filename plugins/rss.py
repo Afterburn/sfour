@@ -15,6 +15,7 @@ def assert_value(value, feed):
 
     return False
 
+
 def validate(feed):
     if 'feed' not in feed:
         logger.warn('feed not in feed')
@@ -40,29 +41,55 @@ def validate(feed):
 
     return True
 
-def execute(plugins, db, url):
+
+def strip_html(data):
+    return BeautifulSoup(data).get_text()
+
+
+def convert_time(time_string):
+    return datetime.fromtimestamp(mktime(time_string))
+
+
+
+def alert_on(**args):
+    if 'change' in args:
+        pass
+
+
+
+def execute(url, db, **args):
+
+
     feed = feedparser.parse(url)
     
-    logger.info('feed status: %s' % (feed.status))
+    logger.debug('feed status: %s' % (feed.status))
 
     if not validate(feed):
-        logger.info('feed not valid')
+        logger.warn('feed not valid')
         return False
 
-    logger.info('feed validated')
+   
+    title = feed['feed']['title']
 
-    feed_db = db.base.classes.rss(title=feed['feed']['title'])
+    # This queries the database for an existing title, if it does not exist it adds it. We also 
+    # need the parent "id" for the "entry".
+    query = db.session.query(db.base.classes.rss.title, db.base.classes.rss.id).filter_by(title=title).first()
+
+    if not query:
+        query = db.session.classes.rss(title=title)
 
     for e in feed.entries:
-        summary_detail = BeautifulSoup(e['summary_detail']['value']).get_text()
-        published      = datetime.fromtimestamp(mktime(e['published_parsed']))
+        summary_detail = strip_html(e['summary_detail']['value'])
+        published      = convert_time(e['published_parsed'])
 
         entry = db.base.classes.entry(summary_detail=summary_detail,
-                                      published=published)
-        
-        feed_db.entry_collection.append(entry)
+                                      published=published,
+                                      parent_id=query.id)
 
+        db.session.add(entry)
 
-    db.session.add(feed_db)
     db.session.commit()
 
+
+    if 'alert_on' in args:
+        alert_on(**args)

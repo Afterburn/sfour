@@ -17,4 +17,12 @@
     interval: .50
     url: http://alerts.weather.gov/cap/us.php?x=0    
 
+    notify_on:
+        change: entry.title  
+
+  
+- notify:
+    email: sightline.networks@gmail.com
+
+
 
