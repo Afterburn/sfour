@@ -61,6 +61,10 @@ class Core():
 
 
     def load_plugin(self, name):
+
+        if name in self.loaded_plugins:
+            return self.loaded_plugins[name]
+
         plugin = False
 
         for file_ in os.listdir(self.settings['plugin_dir']):
@@ -84,6 +88,7 @@ class Core():
     def execute_config(self):
 
         for plugin_name,args in Helper.yield_items(self.plugin_cfg):
+            logging.debug('scheduling plugin: %s, args: %s' % (plugin_name, args))
             if 'interval' not in args:
                 logging.critical('interval not set for: %s' % (plugin_name))
                 return False

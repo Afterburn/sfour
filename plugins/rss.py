@@ -50,13 +50,6 @@ def convert_time(time_string):
     return datetime.fromtimestamp(mktime(time_string))
 
 
-
-def alert_on(**args):
-    if 'change' in args:
-        pass
-
-
-
 def execute(url, db, **args):
 
 
@@ -76,20 +69,21 @@ def execute(url, db, **args):
     query = db.session.query(db.base.classes.rss.title, db.base.classes.rss.id).filter_by(title=title).first()
 
     if not query:
-        query = db.session.classes.rss(title=title)
+        query = db.base.classes.rss(title=title)
 
-    for e in feed.entries:
-        summary_detail = strip_html(e['summary_detail']['value'])
-        published      = convert_time(e['published_parsed'])
+    for entry in feed.entries:
+        summary_detail = strip_html(entry['summary_detail']['value'])
+        published      = convert_time(entry['published_parsed'])
 
-        entry = db.base.classes.entry(summary_detail=summary_detail,
+        data = db.base.classes.entry(summary_detail=summary_detail,
                                       published=published,
-                                      parent_id=query.id)
+                                      parent_id=query.id, 
+                                      url=url)
 
-        db.session.add(entry)
+        db.session.add(data)
+
+        if 'notify' in args:
+            args['plugins']('notify').execute(entry, db, **args)
 
     db.session.commit()
 
-
-    if 'alert_on' in args:
-        alert_on(**args)

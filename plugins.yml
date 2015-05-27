@@ -11,18 +11,18 @@
 
 - rss:
     interval: 30
-    url: http://feeds.reuters.com/Reuters/domesticNews
+    url:      http://feeds.reuters.com/Reuters/domesticNews
     
 - rss:
     interval: .50
-    url: http://alerts.weather.gov/cap/us.php?x=0    
+    url:      http://alerts.weather.gov/cap/us.php?x=0    
 
-    notify_on:
-        change: entry.title  
+    notify: 
+      message: "{{ summary }}"
+      email:  someshit@email.com
 
-  
-- notify:
-    email: sightline.networks@gmail.com
+      
 
+        
 
 

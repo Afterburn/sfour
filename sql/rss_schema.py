@@ -6,6 +6,7 @@ class Entry(Base):
     parent_id      = Column(Integer, ForeignKey('rss.id'))
     summary_detail = Column(String)
     published      = Column(DateTime)
+    url            = Column(String)
 
 
 class RSS(Base):
