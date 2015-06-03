@@ -1,0 +1,29 @@
+---
+# http://alerts.weather.gov/
+
+
+- test:
+    interval: 1
+    
+    
+- rss:
+    interval: 10
+    url:      http://alerts.weather.gov/
+
+    notify: 
+      new: True
+      message: "{{ summary }}"
+      email:  someshit@email.com
+
+- weather:
+    interval: 30
+    zip_code: 59401
+    api_key: wunder_ground_api_key
+
+
+
+      
+
+        
+
+

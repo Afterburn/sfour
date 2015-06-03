@@ -22,7 +22,7 @@ def validate(feed):
         return False
 
     for entry in feed.entries:
-        if 'value' not in entry['summary_detail']:
+        if 'summary_detail' not in entry or 'value' not in entry['summary_detail']:
             logger.warn('feed missing summary_detail: %s ' % (feed['feed']['title']))
             return False
 
@@ -63,6 +63,9 @@ def execute(url, db, **args):
 
    
     title = feed['feed']['title']
+
+    # Validate the feed
+    print(feed)
 
     # This queries the database for an existing title, if it does not exist it adds it. We also 
     # need the parent "id" for the "entry".

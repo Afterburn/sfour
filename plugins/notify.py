@@ -14,9 +14,12 @@ logger = logging.getLogger()
 env    = Environment()
 
 def execute(entry, db, **args):
-    if 'notify' in args:
+    args = args['notify']
+
+    # Notify on anything new
+    if 'new' in args and args['new'] == True:
         logging.debug('notification: %s' % args)
-        msg = env.from_string(args['notify']['message'])
+        msg = env.from_string(args['message'])
         print(msg.render(entry))
 
         
