@@ -86,7 +86,8 @@ def execute(url, db, **args):
         db.session.add(data)
 
         if 'notify' in args:
-            args['plugins']('notify').execute(entry, db, **args)
+            args.append({'entry':entry})
+            args['plugins']('notify').execute(db, **args)
 
     db.session.commit()
 
