@@ -47,6 +47,9 @@ class Core():
         self.global_cfg = cfg_manager.get_global_cfg()
         self.plugin_cfg = cfg_manager.get_plugin_cfg()
         self.settings   = cfg_manager.get_settings()
+
+
+        self.email_settings = Helper.get_item(self.global_cfg, 'email')
    
         self.loaded_plugins = {}
         
@@ -97,8 +100,9 @@ class Core():
             copy_args = copy.copy(args) 
             del copy_args['interval']
 
-            copy_args['plugins'] = self.load_plugin
-            copy_args['db']      = self.db
+            copy_args['plugins']    = self.load_plugin
+            copy_args['db']         = self.db
+            copy_args['email_settings'] = self.email_settings[0]
 
             # See if plugin is already loaded
             if plugin_name not in self.loaded_plugins:
@@ -130,6 +134,7 @@ class ConfigManager():
         self.p_cfg      = {}
         self.g_cfg      = {}
         self.settings   = {}
+        self.email_settings = {}
          
         
         if not os.path.exists(self.g_cfg_path):
@@ -143,10 +148,14 @@ class ConfigManager():
       
         # Look for settings (item_data, args)
         self.settings = Helper.get_item(self.g_cfg, 'settings')[0]
+        self.email_settings = Helper.get_item(self.g_cfg, 'email')[0]
 
         if not self.settings:
             print('Could not load settings')
             return 
+
+        if not self.email_settings:
+            print('Could not load email settings') 
 
         if 'log_path' not in self.settings:
             self.settings['log_path'] = '%s/log' % (self.base_dir)

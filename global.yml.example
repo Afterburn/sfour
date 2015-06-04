@@ -5,3 +5,9 @@
     db_path:    sqlite:////home/stealth/programming/sfour/items.db
     plugin_dir: /home/stealth/programming/sfour/plugins
     plugin_cfg: /home/stealth/programming/sfour/plugin.yml
+    
+
+- email:
+    to:   some@email.com
+    from: some@email.com
+    subject: "S4 Notification"
