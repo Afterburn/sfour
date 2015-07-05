@@ -50,9 +50,10 @@ def convert_time(time_string):
     return datetime.fromtimestamp(mktime(time_string))
 
 
-def execute(url, db, **args):
-
-
+def execute(url, **args):
+    db    = args['db']
+    table = db['data']
+    
     feed = feedparser.parse(url)
     
     logger.debug('feed status: %s' % (feed.status))
@@ -64,30 +65,42 @@ def execute(url, db, **args):
    
     title = feed['feed']['title']
 
-    # Validate the feed
-    print(feed)
+    if 'alias' in args:
+        alias = args['alias']
+
+    else:
+        alias = title
+
+
+    for entry in feed.entries:
+        published = convert_time(entry['published_parsed'])
+        summary_detail=strip_html(entry['summary_detail']['value'])
+
+        # Prevent duplicates
+
+        if table.find_one(name=alias, published=published, summary_detail=summary_detail):
+            continue
+
+        else:
+            table.insert(dict(name=alias, published=published, summary_detail=summary_detail))
 
     # This queries the database for an existing title, if it does not exist it adds it. We also 
     # need the parent "id" for the "entry".
-    query = db.session.query(db.base.classes.rss.title, db.base.classes.rss.id).filter_by(title=title).first()
+    #query = db.session.query(db.base.classes.rss.title, db.base.classes.rss.id).filter_by(title=title).first()
 
-    if not query:
-        query = db.base.classes.rss(title=title)
+    #if not query:
+    #    query = db.base.classes.rss(title=title)
 
-    for entry in feed.entries:
-        summary_detail = strip_html(entry['summary_detail']['value'])
-        published      = convert_time(entry['published_parsed'])
-
-        data = db.base.classes.entry(summary_detail=summary_detail,
-                                      published=published,
-                                      parent_id=query.id, 
-                                      url=url)
-
-        db.session.add(data)
-
-        if 'notify' in args:
-            args.append({'entry':entry})
-            args['plugins']('notify').execute(db, **args)
-
-    db.session.commit()
+    #for entry in feed.entries:
+    #    summary_detail = strip_html(entry['summary_detail']['value'])
+    #    published      = convert_time(entry['published_parsed'])
+    #
+    #    data = db.base.classes.entry(summary_detail=summary_detail,
+    #                                  published=published,
+    #                                  parent_id=query.id, 
+    #                                  url=url)
+    #
+    #    db.session.add(data)
+    #
+    #db.session.commit()
 

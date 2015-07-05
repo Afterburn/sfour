@@ -1,0 +1,12 @@
+---
+# http://alerts.weather.gov/
+
+
+- test:
+    interval: 1
+    
+- rss:
+    interval: 2
+    url:      http://alerts.weather.gov/cap/us.php?x=0
+    alias:    weather_alerts
+
