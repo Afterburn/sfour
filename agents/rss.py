@@ -78,11 +78,11 @@ def execute(url, **args):
 
         # Prevent duplicates
 
-        if table.find_one(name=alias, published=published, summary_detail=summary_detail):
+        if table.find_one(alias=alias, published=published, summary_detail=summary_detail):
             continue
 
         else:
-            table.insert(dict(name=alias, published=published, summary_detail=summary_detail))
+            table.insert(dict(alias=alias, published=published, summary_detail=summary_detail))
 
     # This queries the database for an existing title, if it does not exist it adds it. We also 
     # need the parent "id" for the "entry".

@@ -8,6 +8,9 @@ def execute(**args):
     db        = args['db']
     table     = db['data']
 
-    print(table.find(alias=alias))
 
-    #print('observer: %s' % (args))
+    if condition == 'any_value':
+        result = list(table.find(alias=alias)
+
+
+    
